@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Blog Editor</title>
+
+<style>
+* { box-sizing: border-box; }
+/* ===== THEME VARIABLE ===== */
+:root {
+  --bg: linear-gradient(135deg, #667eea, #764ba2);
+  --card: #ffffff;
+  --text: #1a202c;
+  --input: #ffffff;
+  --border: #ddd;
+}
+body.dark {
+  --bg: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+  --card: #1e293b;
+  --text: #e5e7eb;
+  --input: #0f172a;
+  --border: #334155;
+}
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: 'Segoe UI', sans-serif;
+  background: var(--bg);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: var(--text);
+}
+.card {
+  background: var(--card);
+  width: 90%;
+  max-width: 800px;
+  border-radius: 16px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+  padding: 25px;
+}
+#login h2 { text-align: center; }
+#login input {
+  width: 100%;
+  padding: 12px;
+  margin-top: 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--input);
+  color: var(--text);
+}
+#login button {
+  width: 100%;
+  margin-top: 15px;
+  padding: 12px;
+  border: none;
+  border-radius: 10px;
+  background: #667eea;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+}
+#editor { display: none; }
+.editor-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.controls { display: flex; gap: 10px; }
+button {
+  border: none;
+  border-radius: 8px;
+  padding: 8px 14px;
+  cursor: pointer;
+}
+.logout { background: #ef4444; color: white; }
+.theme { background: #64748b; color: white; }
+textarea {
+  width: 100%;
+  height: 350px;
+  margin-top: 15px;
+  padding: 15px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  font-family: Consolas, monospace;
+  background: var(--input);
+  color: var(--text);
+  resize: none;
+}
+.actions { margin-top: 15px; }
+.send {
+  width: 100%;
+  background: #22c55e;
+  color: white;
+  font-size: 16px;
+  padding: 12px;
+  border-radius: 10px;
+}
+.error { color: #f87171; text-align: center; }
+</style>
+</head>
+
+<body>
+<div class="card">
+
+
+  <div id="login">
+    <h2>🔐 Login To Editor</h2>
+    <input type="password" id="password" placeholder="Masukkan password">
+    <button onclick="login()">Login</button>
+    <p id="error" class="error"></p>
+  </div>
+
+  
+  <div id="editor">
+    <div class="editor-header">
+      <h2>Blog Editor</h2>
+      <div class="controls">
+        <button class="theme" onclick="toggleTheme()">☀️/🌙</button>
+        <button class="logout" onclick="logout()">Logout</button>
+      </div>
+    </div>
+
+    <textarea id="kode" placeholder="Tulis kode HTML di sini..."></textarea>
+
+    <div class="actions">
+      <button class="send" onclick="kirim()">Kirim & Lihat</button>
+    </div>
+  </div>
+
+</div>
+
+
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
+import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBY1ghLJ7LlraovUSLgNMu2iBVmYXcCzGQ",
+  authDomain: "neoblog-rjwl.firebaseapp.com",
+  databaseURL: "https://neoblog-rjwl-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "neoblog-rjwl",
+  storageBucket: "neoblog-rjwl.firebasestorage.app",
+  messagingSenderId: "263085827132",
+  appId: "1:263085827132:web:d35cb3d5abf4c9c78b4f39"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const dataRef = ref(db, "blog/content");
+
+const PASSWORD_BENAR = "@adminmode#2468$_'@";
+
+const loginBox = document.getElementById("login");
+const editorBox = document.getElementById("editor");
+const textarea = document.getElementById("kode");
+const error = document.getElementById("error");
+
+
+if (localStorage.getItem("isLogin") === "true") tampilEditor();
+
+
+if (localStorage.getItem("theme") === "dark") {
+  document.body.classList.add("dark");
+}
+
+window.toggleTheme = () => {
+  document.body.classList.toggle("dark");
+  localStorage.setItem(
+    "theme",
+    document.body.classList.contains("dark") ? "dark" : "light"
+  );
+};
+
+window.login = () => {
+  if (document.getElementById("password").value === PASSWORD_BENAR) {
+    localStorage.setItem("isLogin", "true");
+    tampilEditor();
+  } else {
+    error.textContent = "Password salah!";
+  }
+};
+
+async function tampilEditor() {
+  loginBox.style.display = "none";
+  editorBox.style.display = "block";
+  const snap = await get(dataRef);
+  if (snap.exists()) textarea.value = snap.val();
+}
+
+
+textarea.addEventListener("input", () => {
+  set(dataRef, textarea.value);
+});
+
+window.kirim = async () => {
+  await set(dataRef, textarea.value);
+  window.location.href = "output.html";
+};
+
+window.logout = () => {
+  localStorage.removeItem("isLogin");
+  location.reload();
+};
+</script>
+
+</body>
+</html>
